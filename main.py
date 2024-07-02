@@ -29,6 +29,9 @@ ntfy_server = os.environ.get("NTFY_SERVER", "https://ntfy.sh")
 ntfy_topic = os.environ.get("NTFY_TOPIC", "")
 ntfy_token = os.environ.get("NTFY_TOKEN", "")
 
+trigger_honk_horn = os.environ.get("HONK_HORN", "false")
+trigger_flash_lights = os.environ.get("FLASH_LIGHTS", "false")
+
 logging.basicConfig(format=log_format)
 logging.getLogger().setLevel(level=log_level)
 
@@ -131,6 +134,7 @@ def handle_sigterm(signum, frame):
 def main():
     vehicles = get_vehicles()
     ntfy_message_sent = False
+    commands_sent = False
 
     if mqtt_server and mqtt_enabled == "true":
         if mqtt_user and mqtt_pass:
@@ -148,9 +152,17 @@ def main():
                 
                 sentry_active = is_sentry_active(vehicle)
 
+                if commands_sent == False and sentry_active:
+                    if trigger_flash_lights == "true":
+                        logging.debug("%s: Flashing lights", vehicle["vin"])
+                        vehicle.command('FLASH_LIGHTS')
+                    if trigger_honk_horn == "true":
+                        logging.debug("%s: Honking horn", vehicle["vin"])
+                        vehicle.command('HONK_HORN')
+                commands_sent = sentry_active
+
                 if mqtt_enabled and mqttc.is_connected():
                     update_mqtt(vehicle, sentry_active)
-                
                 if ntfy_enabled:
                     if ntfy_message_sent == False and sentry_active:
                         ntfy_send_message(vehicle, sentry_active)
