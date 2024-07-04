@@ -7,6 +7,7 @@ import logging
 import teslapy
 import requests
 import paho.mqtt.client as mqtt
+import json
 
 log_format = os.environ.get("LOG_FORMAT", "%(asctime)s %(levelname)s: %(message)s")
 log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
@@ -17,25 +18,31 @@ cars_vin_filter = os.environ.get("CARS_VIN", "").upper()
 
 timer = os.environ.get("TIMER", 10)
 
-mqtt_enabled = os.environ.get("MQTT_ENABLED", "false")
+mqtt_enabled = os.environ.get("MQTT_ENABLED", "false").lower()
 mqtt_server = os.environ.get("MQTT_SERVER", "")
 mqtt_port = os.environ.get("MQTT_PORT", 1883)
 mqtt_user = os.environ.get("MQTT_USER", "")
 mqtt_pass = os.environ.get("MQTT_PASS", "")
 mqtt_topic_prefix = os.environ.get("MQTT_TOPIC", "tesla-sentry")
 
-ntfy_enabled = os.environ.get("NTFY_ENABLED", "false")
+ntfy_enabled = os.environ.get("NTFY_ENABLED", "false").lower()
 ntfy_server = os.environ.get("NTFY_SERVER", "https://ntfy.sh")
 ntfy_topic = os.environ.get("NTFY_TOPIC", "")
 ntfy_token = os.environ.get("NTFY_TOKEN", "")
 
-trigger_honk_horn = os.environ.get("HONK_HORN", "false")
-trigger_flash_lights = os.environ.get("FLASH_LIGHTS", "false")
+trigger_honk_horn = os.environ.get("HONK_HORN", "false").lower()
+trigger_flash_lights = os.environ.get("FLASH_LIGHTS", "false").lower()
 
 logging.basicConfig(format=log_format)
 logging.getLogger().setLevel(level=log_level)
 
-tesla = teslapy.Tesla(email=tesla_user, cache_file='/cache/cache.json')
+if not os.path.isfile("/etc/tesla-sentry-notifier/cache.json"):
+    logging.info('Cache file not found - creating new')
+    with open('/etc/tesla-sentry-notifier/cache.json', 'w') as file:
+        json.dump({}, file)
+
+tesla = teslapy.Tesla(email=tesla_user, cache_file="/etc/tesla-sentry-notifier/cache.json")
+
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
 def current_time():
@@ -161,9 +168,9 @@ def main():
                         vehicle.command('HONK_HORN')
                 commands_sent = sentry_active
 
-                if mqtt_enabled and mqttc.is_connected():
+                if mqtt_enabled == "true" and mqttc.is_connected():
                     update_mqtt(vehicle, sentry_active)
-                if ntfy_enabled:
+                if ntfy_enabled == "true":
                     if ntfy_message_sent == False and sentry_active:
                         ntfy_send_message(vehicle, sentry_active)
                     ntfy_message_sent = sentry_active
@@ -177,10 +184,10 @@ def main():
 if __name__ == "__main__":
     logging.info("Starting with user account: %s", tesla_user)
 
-    if mqtt_enabled:
+    if mqtt_enabled == "true":
         logging.info('MQTT Enabled %s:%s', mqtt_server, mqtt_port)
 
-    if ntfy_enabled:
+    if ntfy_enabled == "true":
         logging.info("NTFY Enabled %s/%s", ntfy_server, ntfy_topic)
 
     signal.signal(signal.SIGTERM, handle_sigterm)
