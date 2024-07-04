@@ -1,6 +1,9 @@
 # Tesla Sentry Notifier
 A simple application that notifies the activation of Sentry Mode in your Tesla to mqtt or ntfy.
 
+- [https://mqtt.org](https://mqtt.org/)
+- [https://ntfy.sh](https://ntfy.sh/)
+
 ## First Run - Login to Tesla Account
 
 Create volume to persist login between container restarts.
@@ -52,9 +55,9 @@ services:
 | Environment Variable  | Description | Default Value |
 | --------------------- | ----------- | ------------- |
 | `LOG_LEVEL` | STDOUT Log level | `INFO` |
-| `TZ` | Time Zone | `UTC` |
+| `TZ` | Time Zone Identifier | `UTC` |
 | `TESLA_USER` | Login E-mail to Tesla Account | - |
-| `TIMER` | Interval to check Sentry Mode status | `10` |
+| `TIMER` | Interval to check Sentry Mode status (seconds) | `10` |
 | `MQTT_ENABLED` | Enable MQTT Functionality | `false` |
 | `MQTT_SERVER` | MQTT Server address (ip or hostname) | - |
 | `MQTT_PORT` | MQTT Server port | `1883` |
