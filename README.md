@@ -58,6 +58,7 @@ services:
 | `TZ` | Time Zone Identifier | `UTC` |
 | `TESLA_USER` | Login E-mail to Tesla Account | - |
 | `TIMER` | Interval to check Sentry Mode status (seconds) | `10` |
+| `TIMER_SKIP` | Skip checking of vehicle for X seconds when sentry is not enabled | `120` |
 | `MQTT_ENABLED` | Enable MQTT Functionality | `false` |
 | `MQTT_SERVER` | MQTT Server address (ip or hostname) | - |
 | `MQTT_PORT` | MQTT Server port | `1883` |
@@ -68,8 +69,6 @@ services:
 | `NTFY_SERVER` | NTFY Server | `https://ntfy.sh` |
 | `NTFY_TOPIC` | NTFY Topic | - |
 | `NTFY_TOKEN` | NTFY access token | - |
-| `HONK_HORN` | Honk car's horn when Sentry activated (be sensible) | `false` |
-| `FLASH_LIGHTS` | Flash car's lights when Sentry activated | `false` |
 
 ## Support Me
 
