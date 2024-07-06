@@ -156,8 +156,7 @@ def main():
                     vehicle_state = vehicle.get_vehicle_data()["vehicle_state"]
                 except requests.exceptions.HTTPError as err:
                     if err.response.status_code == 408:
-                        logging.info('%s: Vehicle is Offline or Sleeping - Skipping for %i seconds', vehicle['vin'], timer_skip)
-                        vehicle["skip"] = current_time + timer_skip
+                        logging.info('%s: Vehicle is Offline or Sleeping', vehicle['vin'])
                     else:
                         logging.error('HTTP %i %s', err.response.status_code, err.response.text)
                     if mqtt_enabled == "true":
@@ -169,8 +168,10 @@ def main():
                 if is_sentry_enabled(vehicle_state):
                     vehicle["sentry_enabled"] = True
                 else:
-                    logging.info('%s: Sentry Mode OFF - Skipping this vehicle for %i seconds', vehicle['vin'], timer_skip)
-                    vehicle["skip"] = current_time + timer_skip
+                    logging.info('%s: Sentry Mode OFF', vehicle['vin'])
+                    if timer_skip > timer:
+                        logging.info('%s: Skipping this vehicle for %i seconds', vehicle['vin'], timer_skip)
+                        vehicle["skip"] = current_time + timer_skip
                     if mqtt_enabled == "true":
                         update_mqtt(vehicle)
                     continue
