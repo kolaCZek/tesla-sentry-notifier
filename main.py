@@ -19,7 +19,7 @@ cars_vin_filter = os.environ.get('CARS_VIN', '').upper()
 timer = int(os.environ.get('TIMER', 10))
 timer_skip = int(os.environ.get('TIMER_SKIP', 120))
 
-mqtt_enabled =  os.environ.get('MQTT_ENABLED', 'False').lower() in ('true', '1', 't')
+mqtt_enabled = os.environ.get('MQTT_ENABLED', 'False').lower() in ('true', '1', 't')
 mqtt_server = os.environ.get('MQTT_SERVER')
 mqtt_port = int(os.environ.get('MQTT_PORT', 1883))
 mqtt_user = os.environ.get('MQTT_USER')
@@ -42,10 +42,12 @@ if not os.path.isfile('/etc/tesla-sentry-notifier/cache.json'):
 tesla = teslapy.Tesla(email=tesla_user, cache_file='/etc/tesla-sentry-notifier/cache.json')
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
+
 def current_time():
     timezone = pytz.timezone(timezone_str)
     current_time = datetime.now(timezone)
     return str(current_time)
+
 
 def get_vehicles():
     logging.debug('Getting vehicle list')
@@ -62,17 +64,20 @@ def get_vehicles():
 
     return vehicles
 
+
 def is_sentry_enabled(vehicle_state):
-    if 'sentry_mode' in vehicle_state and vehicle_state['sentry_mode'] == True:
+    if 'sentry_mode' in vehicle_state and vehicle_state['sentry_mode'] is True:
         return True
 
     return False
+
 
 def is_sentry_triggered(vehicle_state):
     if 'center_display_state' in vehicle_state and vehicle_state['center_display_state'] == 7:
         return True
 
     return False
+
 
 def update_mqtt(vehicle):
     if not mqttc.is_connected():
@@ -85,6 +90,7 @@ def update_mqtt(vehicle):
     mqttc.publish(mqtt_topic + 'sentry_enabled', vehicle['sentry_enabled'])
     mqttc.publish(mqtt_topic + 'sentry_triggered', vehicle['sentry_triggered'])
     mqttc.publish(mqtt_topic + 'last_update', current_time())
+
 
 def ntfy_send_message(vehicle):
     if not ntfy_server or not ntfy_topic:
@@ -107,8 +113,10 @@ def ntfy_send_message(vehicle):
     logging.debug('NTFY: Sending message to %s', ntfy_url)
     try:
         requests.post(ntfy_url, data=ntfy_message.encode(encoding='utf-8'), headers=ntfy_headers)
-    except:
+    except Exception as err:
         logging.error('NTFY: Can not send message!')
+        logging.debug(err)
+
 
 def this_is_the_end():
     if mqttc.is_connected():
@@ -122,14 +130,16 @@ def this_is_the_end():
     logging.info('Exiting, bye...')
     exit(0)
 
+
 def handle_sigterm(signum, frame):
     logging.info('Program interrupted by sigterm')
     this_is_the_end()
 
+
 def main():
     vehicles = get_vehicles()
 
-    if mqtt_enabled == True and mqtt_server != '':
+    if mqtt_enabled is True and mqtt_server != '':
         if mqtt_user != '' and mqtt_pass != '':
             logging.debug('MQTT setting user & pass')
             mqttc.username_pw_set(mqtt_user, mqtt_pass)
@@ -144,7 +154,8 @@ def main():
 
             for vehicle in vehicles:
                 if 'skip' in vehicle and current_time < vehicle['skip']:
-                    logging.debug('%s: Vehicle Offline or Senty OFF - Skipping (%i seconds)', vehicle['vin'], vehicle['skip'] - current_time)
+                    logging.debug('%s: Vehicle Offline or Senty OFF - Skipping (%i seconds)',
+                                  vehicle['vin'], vehicle['skip'] - current_time)
                     continue
 
                 vehicle['vehicle_online'] = False
@@ -159,7 +170,7 @@ def main():
                         logging.info('%s: Vehicle is Offline or Sleeping', vehicle['vin'])
                     else:
                         logging.error('HTTP %i %s', err.response.status_code, err.response.text)
-                    if mqtt_enabled == True:
+                    if mqtt_enabled is True:
                         update_mqtt(vehicle)
                     continue
 
@@ -172,7 +183,7 @@ def main():
                     if timer_skip > timer:
                         logging.info('%s: Skipping this vehicle for %i seconds', vehicle['vin'], timer_skip)
                         vehicle['skip'] = current_time + timer_skip
-                    if mqtt_enabled == True:
+                    if mqtt_enabled is True:
                         update_mqtt(vehicle)
                     continue
 
@@ -183,18 +194,18 @@ def main():
                     logging.info('%s: Sentry Mode ON - No Activity', vehicle['vin'])
                     vehicle['commands_sent'] = False
                     vehicle['ntfy_message_sent'] = False
-                    if mqtt_enabled == True:
+                    if mqtt_enabled is True:
                         update_mqtt(vehicle)
                     continue
 
-                if mqtt_enabled == True:
+                if mqtt_enabled is True:
                     update_mqtt(vehicle)
 
-                if not 'ntfy_message_sent' in vehicle:
+                if 'ntfy_message_sent' not in vehicle:
                     vehicle['ntfy_message_sent'] = False
 
-                if ntfy_enabled == True:
-                    if vehicle['ntfy_message_sent'] == False:
+                if ntfy_enabled is True:
+                    if vehicle['ntfy_message_sent'] is False:
                         ntfy_send_message(vehicle)
                         vehicle['ntfy_message_sent'] = True
 
@@ -204,13 +215,14 @@ def main():
         logging.info('Interrupted by user input')
         this_is_the_end()
 
+
 if __name__ == "__main__":
     logging.info('Starting with user account: %s', tesla_user)
 
-    if mqtt_enabled == True:
+    if mqtt_enabled is True:
         logging.info('MQTT Enabled %s:%s', mqtt_server, mqtt_port)
 
-    if ntfy_enabled == True:
+    if ntfy_enabled is True:
         logging.info('NTFY Enabled %s/%s', ntfy_server, ntfy_topic)
 
     signal.signal(signal.SIGTERM, handle_sigterm)
