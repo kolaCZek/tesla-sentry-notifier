@@ -173,6 +173,16 @@ def main():
                     if mqtt_enabled is True:
                         update_mqtt(vehicle)
                     continue
+                except requests.exceptions.RequestException as err:
+                    logging.error('HTTP Request failed: %s', str(err))
+                    if mqtt_enabled is True:
+                        update_mqtt(vehicle)
+                    continue
+                except Exception as err:
+                    logging.error('An unexpected error occurred: %s', str(err))
+                    if mqtt_enabled is True:
+                        update_mqtt(vehicle)
+                    continue
 
                 vehicle['vehicle_online'] = True
 
